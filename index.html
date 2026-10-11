@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>DualPrep 双考计划</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root{
+      --bg:#f6f7fb; --panel:#ffffff; --text:#111827; --muted:#6b7280;
+      --line:#e5e7eb; --accent:#4f46e5; --accent2:#0f766e; --warn:#b45309;
+      --good:#15803d; --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+      background:var(--bg); color:var(--text); min-height:100vh;
+    }
+    .app{max-width:720px;margin:0 auto;padding:18px 16px 96px}
+    .hero{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
+    h1{font-size:24px;margin:0 0 6px}.sub{color:var(--muted);font-size:14px}
+    .pill{font-size:12px;padding:7px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;white-space:nowrap}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+    .metric{font-size:28px;font-weight:800;letter-spacing:-.04em;margin-top:7px}
+    .metric small{font-size:13px;font-weight:600;color:var(--muted)}
+    .label{font-size:13px;color:var(--muted)}
+    .progress{height:9px;background:#eef0f4;border-radius:99px;overflow:hidden;margin-top:10px}
+    .progress>i{display:block;height:100%;background:var(--accent);border-radius:99px}
+    .section-title{font-size:16px;font-weight:800;margin:20px 2px 10px}
+    .task{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+    .task:last-child{border-bottom:0}
+    .task input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--accent)}
+    .task-main{flex:1;min-width:0}.task-title{font-weight:700}.task-meta{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
+    .tag{font-size:11px;padding:4px 7px;border-radius:999px;background:#f3f4f6;color:#4b5563;white-space:nowrap}
+    .tag.toefl{background:#ecfeff;color:#155e75}.tag.cet{background:#fff7ed;color:#9a3412}
+    .timeline{display:grid;gap:10px}
+    .phase{display:grid;grid-template-columns:82px 1fr;gap:12px;align-items:start}
+    .phase-date{font-size:12px;color:var(--muted);padding-top:2px}
+    .phase-body{border-left:3px solid #d1d5db;padding:0 0 14px 14px}
+    .phase.active .phase-body{border-left-color:var(--accent)}
+    .phase-title{font-weight:800}.phase-note{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5}
+    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input[type="date"],input[type="number"]{width:100%;font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text)}
+    button{font:inherit;border:0;border-radius:12px;padding:11px 14px;cursor:pointer}
+    .btn{background:var(--accent);color:#fff;font-weight:700}.btn.secondary{background:#f3f4f6;color:#111827}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .note{font-size:13px;color:var(--muted);line-height:1.6}
+    .score-row{display:grid;grid-template-columns:1fr 90px;gap:10px;align-items:end;margin-bottom:10px}
+    .history{margin-top:12px;font-size:13px}.history-item{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
+    nav{
+      position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);
+      display:flex;justify-content:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)
+    }
+    .nav-inner{width:min(720px,100%);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+    .nav-btn{background:transparent;color:var(--muted);padding:9px 6px;font-size:12px}.nav-btn.active{background:#eef2ff;color:#3730a3;font-weight:800}
+    .page{display:none}.page.active{display:block}
+    .status{font-size:13px;color:var(--good);min-height:20px;margin-top:8px}
+    .week-plan{width:100%;border-collapse:collapse;font-size:13px}.week-plan th,.week-plan td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.week-plan th{color:var(--muted);font-weight:700}
+    @media (max-width:430px){.grid{grid-template-columns:1fr 1fr}.input-row{grid-template-columns:1fr}.metric{font-size:24px}.phase{grid-template-columns:70px 1fr}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="hero">
+    <div>
+      <h1>DualPrep</h1>
+      <div class="sub">六级 560+ · TOEFL 5.0 · 2026 双考冲刺</div>
+    </div>
+    <div class="pill" id="phasePill">加载中</div>
+  </div>
+
+  <section id="today" class="page active">
+    <div class="grid">
+      <div class="card">
+        <div class="label">六级倒计时</div>
+        <div class="metric" id="cetDays">-- <small>天</small></div>
+        <div class="label">12 月 12 日下午</div>
+      </div>
+      <div class="card">
+        <div class="label">托福倒计时</div>
+        <div class="metric" id="toeflDays">-- <small>天</small></div>
+        <div class="label" id="toeflDateLabel">目标日期</div>
+      </div>
+    </div>
+
+    <div class="section-title">今日任务</div>
+    <div class="card" id="taskList"></div>
+
+    <div class="section-title">今日完成度</div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:end;gap:12px">
+        <div>
+          <div class="label">已完成任务</div>
+          <div class="metric" id="doneText">0/0</div>
+        </div>
+        <div class="pill" id="minutesText">0 min</div>
+      </div>
+      <div class="progress"><i id="progressBar" style="width:0%"></i></div>
+    </div>
+  </section>
+
+  <section id="plan" class="page">
+    <div class="section-title">冲刺路线</div>
+    <div class="card timeline" id="timeline"></div>
+    <div class="section-title">每周固定节奏</div>
+    <div class="card" style="overflow:auto">
+      <table class="week-plan">
+        <thead><tr><th>日期</th><th>2h / 3h 主任务</th></tr></thead>
+        <tbody>
+          <tr><td>周一</td><td>托福听力 + 六级听力</td></tr>
+          <tr><td>周二</td><td>托福阅读 + 口语</td></tr>
+          <tr><td>周三</td><td>托福听力 + 六级写译</td></tr>
+          <tr><td>周四</td><td>托福写作 + 口语</td></tr>
+          <tr><td>周五</td><td>六级听力 + 托福词汇/复盘</td></tr>
+          <tr><td>周六</td><td>托福整套/模考 + 深度复盘</td></tr>
+          <tr><td>周日</td><td>六级真题 + 本周复盘</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="stats" class="page">
+    <div class="section-title">成绩追踪</div>
+    <div class="grid">
+      <div class="card"><div class="label">六级当前</div><div class="metric">528</div><div class="label">目标 560+</div></div>
+      <div class="card"><div class="label">阅读优势</div><div class="metric">182</div><div class="label">维持手感即可</div></div>
+      <div class="card"><div class="label">托福目标</div><div class="metric">5.0</div><div class="label">约 95+ 可比总分</div></div>
+      <div class="card"><div class="label">本周时长</div><div class="metric" id="weekMinutes">0 <small>min</small></div><div class="label">目标约 720 min</div></div>
+    </div>
+
+    <div class="section-title">记录一次模考</div>
+    <div class="card">
+      <div class="score-row">
+        <div>
+          <label for="scoreType">类型</label>
+          <select id="scoreType" style="width:100%;font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff">
+            <option value="TOEFL">TOEFL（1–6）</option>
+            <option value="CET6">CET-6（总分）</option>
+          </select>
+        </div>
+        <div>
+          <label for="scoreValue">成绩</label>
+          <input id="scoreValue" type="number" step="0.5" min="0">
+        </div>
+      </div>
+      <button class="btn" id="addScore">保存记录</button>
+      <div class="history" id="history"></div>
+    </div>
+  </section>
+
+  <section id="settings" class="page">
+    <div class="section-title">考试设置</div>
+    <div class="card">
+      <div class="input-row">
+        <div>
+          <label for="toeflDate">托福目标考试日期</label>
+          <input id="toeflDate" type="date" value="2026-11-29">
+        </div>
+        <div>
+          <label for="toeflTarget">托福目标（1–6）</label>
+          <input id="toeflTarget" type="number" min="1" max="6" step="0.5" value="5">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="saveSettings">保存设置</button>
+        <button class="btn secondary" id="resetToday">重置今日打卡</button>
+      </div>
+      <div class="status" id="settingsStatus" aria-live="polite"></div>
+      <p class="note">建议首考窗口：11 月下旬到 12 月上旬。若你报名了六级口语，尽量避开 11 月 22 日。托福日期可按实际考位修改。</p>
+    </div>
+
+    <div class="section-title">安装到手机</div>
+    <div class="card">
+      <p class="note"><strong>iPhone：</strong>部署到 HTTPS 网站后，用 Safari 打开 → 分享 →“添加到主屏幕”。<br><strong>Android：</strong>Chrome 打开 → 菜单 →“添加到主屏幕 / 安装应用”。</p>
+    </div>
+  </section>
+</div>
+
+<nav>
+  <div class="nav-inner">
+    <button class="nav-btn active" data-page="today">今天</button>
+    <button class="nav-btn" data-page="plan">计划</button>
+    <button class="nav-btn" data-page="stats">数据</button>
+    <button class="nav-btn" data-page="settings">设置</button>
+  </div>
+</nav>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const CET_DATE = "2026-12-12";
+const START_DATE = "2026-10-07";
+const KEY = "dualprep-v1";
+
+const defaultState = {
+  toeflDate:"2026-11-29",
+  toeflTarget:5,
+  completed:{},
+  scores:[],
+  minutes:{}
+};
+
+let state = loadState();
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    return raw ? {...defaultState, ...JSON.parse(raw)} : structuredClone(defaultState);
+  }catch(e){ return JSON.parse(JSON.stringify(defaultState)); }
+}
+function saveState(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+function dateKey(d=new Date()){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function parseDate(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d,12,0,0); }
+function daysLeft(target){
+  const a=parseDate(dateKey()), b=parseDate(target);
+  return Math.max(0, Math.ceil((b-a)/86400000));
+}
+function fmtDate(s){
+  const [y,m,d]=s.split("-").map(Number); return `${m}月${d}日`;
+}
+
+const phases = [
+  {start:"2026-10-07",end:"2026-10-18",title:"阶段 1 · 摸底与适应新托福",ratio:"TOEFL 65% / CET 35%",note:"完成一次托福完整摸底；建立听力精听、口语录音、六级听力错因表。"},
+  {start:"2026-10-19",end:"2026-11-08",title:"阶段 2 · 单项强化",ratio:"TOEFL 70% / CET 30%",note:"重点补听力、口语、写作；六级阅读只维持，写译每周至少 2 次。"},
+  {start:"2026-11-09",end:"2026-11-22",title:"阶段 3 · 套题与限时",ratio:"TOEFL 75% / CET 25%",note:"每周 1–2 次托福整套/半套；六级保持听力与作文翻译手感。"},
+  {start:"2026-11-23",end:"2026-11-29",title:"阶段 4 · 托福首考冲刺",ratio:"TOEFL 85% / CET 15%",note:"减少新题，主做错题回炉、口语流畅度、写作稳定性与睡眠节奏。"},
+  {start:"2026-11-30",end:"2026-12-12",title:"阶段 5 · 六级 560+ 冲刺",ratio:"CET 90% / TOEFL 10%",note:"托福结束后迅速切换：六级听力 + 写译主攻，阅读维持速度。"}
+];
+
+function currentPhase(){
+  const t=dateKey();
+  return phases.find(p=>t>=p.start && t<=p.end) || (t<START_DATE ? phases[0] : phases[phases.length-1]);
+}
+
+function weekdayTasks(){
+  const d=new Date(), wd=d.getDay(), weekend=wd===0||wd===6;
+  const mins = weekend ? 180 : 120;
+  const afterToefl = dateKey() > state.toeflDate;
+
+  if(afterToefl){
+    if(weekend) return [
+      {id:"cet-listen-set",title:"六级听力整套 + 精听复盘",meta:"80 分钟 · 记录错因：没听到 / 听到了没反应 / 选项陷阱",tag:"CET-6",kind:"cet",min:80},
+      {id:"cet-write-trans",title:"作文 + 翻译限时训练",meta:"60 分钟 · 先限时，再逐句改",tag:"CET-6",kind:"cet",min:60},
+      {id:"cet-read-keep",title:"阅读维持",meta:"40 分钟 · 只保持速度和正确率",tag:"CET-6",kind:"cet",min:40}
+    ];
+    return [
+      {id:"cet-listen",title:"六级听力专项",meta:"50 分钟 · 真题 + 精听复盘",tag:"CET-6",kind:"cet",min:50},
+      {id:"cet-write",title:"六级写作/翻译轮换",meta:"40 分钟 · 每天只攻一种",tag:"CET-6",kind:"cet",min:40},
+      {id:"cet-read",title:"阅读维持",meta:"20 分钟 · 1 组限时",tag:"CET-6",kind:"cet",min:20},
+      {id:"review",title:"错题回顾",meta:"10 分钟 · 只看本周高频错误",tag:"复盘",kind:"",min:10}
+    ];
+  }
+
+  const map = {
+    1:[
+      {id:"tf-listen",title:"托福听力 + 跟读复述",meta:"55 分钟 · 听懂结构，不追求逐句翻译",tag:"TOEFL",kind:"toefl",min:55},
+      {id:"cet-listen",title:"六级听力真题",meta:"35 分钟 · 做题 + 错因标记",tag:"CET-6",kind:"cet",min:35},
+      {id:"vocab",title:"词汇复习",meta:"30 分钟 · 托福核心词 + 错词",tag:"TOEFL",kind:"toefl",min:30}
+    ],
+    2:[
+      {id:"tf-read",title:"托福阅读限时",meta:"45 分钟 · 重点练速度和定位",tag:"TOEFL",kind:"toefl",min:45},
+      {id:"tf-speak",title:"托福口语录音",meta:"45 分钟 · 录音 → 回听 → 二次作答",tag:"TOEFL",kind:"toefl",min:45},
+      {id:"vocab",title:"词汇复习",meta:"30 分钟 · 只复习，不盲目扩量",tag:"TOEFL",kind:"toefl",min:30}
+    ],
+    3:[
+      {id:"tf-listen",title:"托福听力专项",meta:"50 分钟 · 对话/讲座结构与笔记",tag:"TOEFL",kind:"toefl",min:50},
+      {id:"cet-write",title:"六级写作或翻译",meta:"40 分钟 · 限时 + 改写",tag:"CET-6",kind:"cet",min:40},
+      {id:"vocab",title:"词汇 + 错题",meta:"30 分钟",tag:"复盘",kind:"",min:30}
+    ],
+    4:[
+      {id:"tf-write",title:"托福写作专项",meta:"50 分钟 · 完成句子 / 邮件 / 学术讨论轮换",tag:"TOEFL",kind:"toefl",min:50},
+      {id:"tf-speak",title:"托福口语专项",meta:"40 分钟 · 听力复述 + 面试题",tag:"TOEFL",kind:"toefl",min:40},
+      {id:"vocab",title:"词汇复习",meta:"30 分钟",tag:"TOEFL",kind:"toefl",min:30}
+    ],
+    5:[
+      {id:"cet-listen",title:"六级听力专项",meta:"45 分钟 · 本周错题二刷",tag:"CET-6",kind:"cet",min:45},
+      {id:"tf-review",title:"托福本周弱项复盘",meta:"45 分钟",tag:"TOEFL",kind:"toefl",min:45},
+      {id:"vocab",title:"词汇回顾",meta:"30 分钟",tag:"复盘",kind:"",min:30}
+    ]
+  };
+  if(weekend){
+    if(wd===6) return [
+      {id:"tf-mock",title:"托福整套 / 半套限时",meta:"110 分钟 · 优先完整模拟考试节奏",tag:"TOEFL",kind:"toefl",min:110},
+      {id:"tf-review",title:"托福深度复盘",meta:"50 分钟 · 只总结可重复的错误模式",tag:"TOEFL",kind:"toefl",min:50},
+      {id:"cet-listen",title:"六级听力保持",meta:"20 分钟 · 1 组真题",tag:"CET-6",kind:"cet",min:20}
+    ];
+    return [
+      {id:"cet-paper",title:"六级真题专项",meta:"80 分钟 · 听力 + 写译优先，阅读少量",tag:"CET-6",kind:"cet",min:80},
+      {id:"tf-skill",title:"托福弱项强化",meta:"70 分钟 · 依据本周最低项选择",tag:"TOEFL",kind:"toefl",min:70},
+      {id:"weekly-review",title:"周复盘",meta:"30 分钟 · 更新模考分数和下周弱项",tag:"复盘",kind:"",min:30}
+    ];
+  }
+  return map[wd] || [];
+}
+
+function renderTasks(){
+  const tasks=weekdayTasks(), key=dateKey();
+  if(!state.completed[key]) state.completed[key]={};
+  const box=$("#taskList"); box.innerHTML="";
+  tasks.forEach(t=>{
+    const row=document.createElement("div"); row.className="task";
+    row.innerHTML=`<input type="checkbox" aria-label="${t.title}" ${state.completed[key][t.id]?"checked":""}>
+      <div class="task-main"><div class="task-title">${t.title}</div><div class="task-meta">${t.meta}</div></div>
+      <span class="tag ${t.kind}">${t.tag}</span>`;
+    row.querySelector("input").addEventListener("change",e=>{
+      state.completed[key][t.id]=e.target.checked;
+      state.minutes[key]=tasks.filter(x=>state.completed[key][x.id]).reduce((a,b)=>a+b.min,0);
+      saveState(); updateProgress(tasks); updateWeekMinutes();
+    });
+    box.appendChild(row);
+  });
+  state.minutes[key]=tasks.filter(x=>state.completed[key][x.id]).reduce((a,b)=>a+b.min,0);
+  updateProgress(tasks);
+}
+function updateProgress(tasks){
+  const key=dateKey(), done=tasks.filter(t=>state.completed[key]?.[t.id]).length;
+  const pct=tasks.length?Math.round(done/tasks.length*100):0;
+  $("#doneText").textContent=`${done}/${tasks.length}`;
+  $("#minutesText").textContent=`${state.minutes[key]||0} min`;
+  $("#progressBar").style.width=pct+"%";
+}
+function updateWeekMinutes(){
+  const now=new Date(); const day=(now.getDay()+6)%7; const monday=new Date(now); monday.setDate(now.getDate()-day);
+  let total=0;
+  for(let i=0;i<7;i++){ const d=new Date(monday); d.setDate(monday.getDate()+i); total += state.minutes[dateKey(d)]||0; }
+  $("#weekMinutes").innerHTML=`${total} <small>min</small>`;
+}
+function renderTimeline(){
+  const t=dateKey(), el=$("#timeline"); el.innerHTML="";
+  phases.forEach(p=>{
+    const d=document.createElement("div"); d.className="phase "+(t>=p.start&&t<=p.end?"active":"");
+    d.innerHTML=`<div class="phase-date">${fmtDate(p.start)}<br>— ${fmtDate(p.end)}</div>
+      <div class="phase-body"><div class="phase-title">${p.title}</div><div class="phase-note">${p.ratio}<br>${p.note}</div></div>`;
+    el.appendChild(d);
+  });
+}
+function renderHistory(){
+  const el=$("#history"); el.innerHTML="";
+  if(!state.scores.length){ el.innerHTML='<div class="note">还没有模考记录。</div>'; return; }
+  state.scores.slice().reverse().forEach(s=>{
+    const row=document.createElement("div"); row.className="history-item";
+    row.innerHTML=`<span>${s.date} · ${s.type}</span><strong>${s.value}</strong>`;
+    el.appendChild(row);
+  });
+}
+function refreshHeader(){
+  $("#cetDays").innerHTML=`${daysLeft(CET_DATE)} <small>天</small>`;
+  $("#toeflDays").innerHTML=`${daysLeft(state.toeflDate)} <small>天</small>`;
+  $("#toeflDateLabel").textContent=fmtDate(state.toeflDate)+" · 可修改";
+  const p=currentPhase(); $("#phasePill").textContent=p.title.replace("阶段 ","P");
+}
+function initNav(){
+  $$(".nav-btn").forEach(b=>b.addEventListener("click",()=>{
+    $$(".nav-btn").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+    $$(".page").forEach(x=>x.classList.remove("active")); $("#"+b.dataset.page).classList.add("active");
+  }));
+}
+
+$("#saveSettings").addEventListener("click",()=>{
+  const d=$("#toeflDate").value, target=Number($("#toeflTarget").value);
+  if(!d){ $("#settingsStatus").textContent="请选择托福日期。"; return; }
+  state.toeflDate=d; state.toeflTarget=Math.min(6,Math.max(1,target||5));
+  saveState(); refreshHeader(); renderTasks();
+  $("#settingsStatus").textContent="已保存。";
+  setTimeout(()=>$("#settingsStatus").textContent="",1800);
+});
+$("#resetToday").addEventListener("click",()=>{
+  const k=dateKey(); state.completed[k]={}; state.minutes[k]=0; saveState(); renderTasks(); updateWeekMinutes();
+  $("#settingsStatus").textContent="今日打卡已重置。";
+});
+$("#addScore").addEventListener("click",()=>{
+  const type=$("#scoreType").value, value=Number($("#scoreValue").value);
+  const ok=type==="TOEFL" ? value>=1&&value<=6 : value>=0&&value<=710;
+  if(!ok) return;
+  state.scores.push({date:dateKey(),type,value}); saveState(); $("#scoreValue").value=""; renderHistory();
+});
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+
+$("#toeflDate").value=state.toeflDate;
+$("#toeflTarget").value=state.toeflTarget;
+initNav(); refreshHeader(); renderTasks(); renderTimeline(); renderHistory(); updateWeekMinutes();
+</script>
+</body>
+</html>

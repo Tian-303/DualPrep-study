@@ -1,0 +1,17 @@
+{
+  "name": "DualPrep 双考计划",
+  "short_name": "DualPrep",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#111827",
+  "description": "CET-6 560+ 与 TOEFL 双考冲刺学习看板",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
